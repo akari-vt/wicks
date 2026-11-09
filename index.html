@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>灯芯像素工房</title>
+<style>
+:root{--bg:#fbf7f2;--card:#fffdfa;--line:#eee3d7;--ink:#4b3f4e;--sub:#9c9099;--accent:#ee9a52;--accent2:#e9a7ba;--chip:#f8f1ea}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+body{min-height:100vh;background:radial-gradient(900px 420px at 50% -8%,#fde9d4 0,transparent 65%),radial-gradient(700px 360px at 100% 100%,#f6e6ef 0,transparent 65%),var(--bg)}
+.wrap{max-width:520px;margin:0 auto;padding:18px 16px 40px}
+header{text-align:center;padding:8px 0 4px}
+header .en{font-size:11px;letter-spacing:.35em;color:var(--accent)}
+header h1{margin:6px 0 4px;font-size:24px;letter-spacing:.1em;font-weight:700}
+header p{margin:0;font-size:13px;color:var(--sub)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:14px;box-shadow:0 4px 18px rgba(170,130,100,.08)}
+.card h2{margin:0 0 10px;font-size:14px;color:var(--accent);letter-spacing:.1em;font-weight:700}
+.card h2 small{color:var(--sub);font-weight:400;letter-spacing:0;margin-left:6px}
+#grid{display:block;width:100%;aspect-ratio:1;touch-action:none;border-radius:12px;cursor:crosshair;
+  background:repeating-conic-gradient(#f6f1eb 0 25%,#ece5dd 0 50%) 0 0/12.5% 12.5%}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13px;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:7px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip canvas{width:22px;height:22px;image-rendering:pixelated}
+.palette{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:2px}
+.sw{aspect-ratio:1;border-radius:9px;border:2px solid rgba(0,0,0,.04);cursor:pointer}
+.sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--accent)}
+.sw.erase{background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/10px 10px}
+.tools{margin-top:12px}
+.stage{height:130px;border-radius:14px;position:relative;overflow:hidden;background:linear-gradient(#fff3e3,#f8ecf3)}
+.stage .ground{position:absolute;left:0;right:0;bottom:0;height:22px;background:#f1e3d4;border-top:2px solid #e8d4c0}
+#walker{position:absolute;bottom:20px;width:72px;height:72px;image-rendering:pixelated}
+.spark{position:absolute;color:#f3c26b;font-size:12px;opacity:.7}
+.code{display:flex;gap:6px;margin-top:10px}
+.code input{flex:1;min-width:0;font:13px ui-monospace,Menlo,monospace;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
+button.main{font:inherit;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(90deg,#f5b56c,#ec8f5c);border:0;border-radius:999px;padding:10px 18px;cursor:pointer}
+.hint{font-size:12px;color:var(--sub);line-height:1.7;margin:8px 0 0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);opacity:0;background:#4b3f4e;color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;transition:.25s}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="en">AKARI · PIXEL STUDIO</div>
+    <h1>灯芯像素工房</h1>
+    <p>打扮你的灯芯，貼到聊天室，它就會在舞台上走來走去！</p>
+  </header>
+
+  <div class="card">
+    <canvas id="grid" width="512" height="512"></canvas>
+    <p class="hint">外框和頭上的天線是灯芯的形狀，不能改；裡面和頭頂的空間都可以自由畫。</p>
+  </div>
+
+  <div class="card">
+    <h2>① 自由塗鴉</h2>
+    <div class="palette" id="pal"></div>
+    <div class="row tools">
+      <button class="chip on" data-tool="pen">✏️ 畫筆</button>
+      <button class="chip" data-tool="fill">🪣 填滿</button>
+      <button class="chip" id="mirror">🪞 左右對稱</button>
+      <button class="chip" id="undo">↩ 復原</button>
+      <button class="chip" id="reset">🔄 重新開始</button>
+    </div>
+  </div>
+
+  <div class="card"><h2>② 表情</h2><div class="row" id="faces"></div></div>
+  <div class="card"><h2>③ 配件 <small>點一下戴上，再點一下拿掉</small></h2><div class="row" id="stamps"></div></div>
+  <div class="card"><h2>✦ 預覽</h2>
+    <div class="stage" id="stage"><div class="ground"></div><canvas id="walker" width="16" height="16"></canvas></div></div>
+
+  <div class="card">
+    <h2>✦ 召喚咒語</h2>
+    <div class="code"><input id="out" readonly><button class="main" id="copy">複製</button></div>
+    <p class="hint">把咒語貼到直播聊天室送出，你的灯芯就會登場。<br>只要貼一次，之後在灯理的直播留言都會用這隻灯芯。<br>想修改：把舊咒語貼到下面，按「讀取」再畫。</p>
+    <div class="code"><input id="inp" placeholder="貼上咒語（灯px:…）"><button class="chip" id="load">讀取</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 灯芯像素：共用定義（像素工房、像素遊行、片尾名單三邊一致，改這裡要三邊一起改） ===== */
+const N = 16;
+const PAL = [null,'#2a1c2e','#ffffff','#fff1c7','#ffd95e','#ffa63d','#e8692e','#e0574a',
+  '#ffb3d1','#ff5f9e','#9fe2ff','#4a86ff','#c9a8ff','#8b5cff','#7be3b8','#2fa77a'];
+// o 外框、a 天線（都鎖定） b 身體 c 臉 k 眼睛 r 嘴巴；灯芯固定是橘色
+const BASE = [
+  '................',
+  '................',
+  '...........aa...',
+  '..........a.....',
+  '.........a......',
+  '.....oooooo.....',
+  '...oobbbbbboo...',
+  '..obbccccccbbo..',
+  '.obckcccccckcbo.',
+  '.obcckcccckccbo.',
+  'obbckcrrrrckcbbo',
+  'obbccrrrrrrccbbo',
+  'obbcccrrrrcccbbo',
+  'obbccccccccccbbo',
+  'obbbccccccccbbbo',
+  '.oooooooooooooo.'];
+const BASE_STR = BASE.join('');
+const LOCK  = [...BASE_STR].map(c => c === 'o' || c === 'a');
+const SHAPE = [...BASE_STR].map(c => 'obckry'.includes(c));
+const FACE  = [...BASE_STR].map((c,i) => 'ckr'.includes(c) && i >= 7*N);
+const BODY = 5, LINE = 6;
+function basePx(){
+  const m = {'.':0,o:LINE,a:LINE,b:BODY,y:4,c:3,k:1,r:7};
+  return [...BASE_STR].map(c => m[c]);
+}
+// 不管咒語怎麼寫，外框一定是灯芯的形狀和顏色、身體裡不會破洞
+function sanitize(px){
+  const out = px.slice(0, N*N), base = basePx();
+  for (let i = 0; i < N*N; i++) {
+    if (LOCK[i]) out[i] = LINE;
+    else if (SHAPE[i] && !out[i]) out[i] = base[i];
+  }
+  return out;
+}
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function b64(bytes){let s='',i=0;for(;i+2<bytes.length;i+=3){const n=bytes[i]<<16|bytes[i+1]<<8|bytes[i+2];
+  s+=B64[n>>18&63]+B64[n>>12&63]+B64[n>>6&63]+B64[n&63];}
+  const r=bytes.length-i;if(r===1){const n=bytes[i]<<16;s+=B64[n>>18&63]+B64[n>>12&63];}
+  else if(r===2){const n=bytes[i]<<16|bytes[i+1]<<8;s+=B64[n>>18&63]+B64[n>>12&63]+B64[n>>6&63];}return s;}
+function unb64(s){const o=[];let b=0,n=0;for(const c of s){const v=B64.indexOf(c);if(v<0)return null;b=b<<6|v;n+=6;if(n>=8){n-=8;o.push(b>>n&255);}}return o;}
+function encode(px){
+  const raw=[];for(let i=0;i<px.length;i+=2)raw.push(px[i]<<4|px[i+1]);
+  const rle=[];let i=0;while(i<px.length){const c=px[i];let n=1;while(i+n<px.length&&px[i+n]===c&&n<16)n++;rle.push(c<<4|(n-1));i+=n;}
+  return '灯px:'+(rle.length<raw.length?'B'+b64(rle):'A'+b64(raw));
+}
+// 不套外框的原始解碼（頻道主的自由造型、限定配件用）
+function decodeRaw(text){
+  const m=/px[:：]\s*([AB])([A-Za-z0-9_-]{2,})/.exec(text||'');if(!m)return null;
+  const bytes=unb64(m[2]);if(!bytes)return null;const px=[];
+  if(m[1]==='A'){for(const b of bytes)px.push(b>>4,b&15);}
+  else{for(const b of bytes){const c=b>>4,k=(b&15)+1;for(let i=0;i<k;i++)px.push(c);}}
+  return px.length>=N*N?px.slice(0,N*N):null;
+}
+function decode(text){ const px=decodeRaw(text); return px?sanitize(px):null; }
+function paintPx(cv, px){
+  cv.width = cv.height = N; const g = cv.getContext('2d'); g.clearRect(0,0,N,N);
+  for (let i = 0; i < N*N; i++) { const c = PAL[px[i]]; if (c) { g.fillStyle = c; g.fillRect(i%N, (i/N)|0, 1, 1); } }
+}
+/* ===== 共用定義結束 ===== */
+
+
+/* ===== 表情與配件 ===== */
+const P = (pts, c) => pts.map(([x,y]) => [x,y,c]);
+const FACES = [
+  {name:'開心', pts:[...P([[4,8],[5,9],[4,10],[11,8],[10,9],[11,10]],1),
+     ...P([[6,10],[7,10],[8,10],[9,10],[5,11],[6,11],[7,11],[8,11],[9,11],[10,11],[6,12],[7,12],[8,12],[9,12]],7)]},
+  {name:'微笑', pts:[...P([[5,8],[5,9],[10,8],[10,9],[6,11],[9,11],[7,12],[8,12]],1)]},
+  {name:'眨眼', pts:[...P([[4,8],[5,9],[4,10],[10,8],[10,9]],1),...P([[7,11],[8,11],[7,12],[8,12]],7)]},
+  {name:'愛心眼', pts:[...P([[4,8],[6,8],[4,9],[5,9],[6,9],[5,10],[9,8],[11,8],[9,9],[10,9],[11,9],[10,10]],9),...P([[7,11],[8,11],[7,12],[8,12]],7)]},
+  {name:'驚訝', pts:[...P([[4,8],[5,8],[4,9],[5,9],[10,8],[11,8],[10,9],[11,9]],1),...P([[7,11],[8,11],[7,12],[8,12]],7)]},
+  {name:'睏睏', pts:[...P([[4,9],[5,9],[10,9],[11,9],[7,12],[8,12]],1)]},
+];
+const STAMPS = [
+  {name:'皇冠', pts:[...P([[4,2],[6,2],[8,2],[4,3],[5,3],[7,3],[8,3],[4,4],[5,4],[6,4],[7,4],[8,4]],4),[6,3,9]]},
+  {name:'蝴蝶結', pts:[...P([[1,3],[2,3],[4,3],[5,3],[1,4],[2,4],[4,4],[5,4],[1,5],[2,5],[4,5],[5,5]],9),[3,4,8]]},
+  {name:'點燈', pts:[[11,0,4],[12,0,4],[11,1,5],[12,1,5]]},
+  {name:'小花', pts:[[13,5,4],...P([[13,4],[13,6],[12,5],[14,5]],8)]},
+  {name:'眼鏡', pts:P([[3,8],[4,8],[5,8],[6,8],[3,9],[6,9],[3,10],[4,10],[5,10],[6,10],
+     [9,8],[10,8],[11,8],[12,8],[9,9],[12,9],[9,10],[10,10],[11,10],[12,10],[7,8],[8,8]],1)},
+  {name:'腮紅', pts:P([[3,11],[4,11],[11,11],[12,11]],8)},
+];
+
+/* ===== 編輯器 ===== */
+const grid=document.getElementById('grid'),g=grid.getContext('2d');
+let px=basePx(), color=9, tool='pen', mirror=false, history=[];
+const worn=new Set();
+const FREE=new URLSearchParams(location.search).get('free')==='1';   // 自由模式：網址加 ?free=1
+const DRAFT=FREE?'pxDraftFree':'pxDraft3';
+const LK=i=>!FREE&&LOCK[i];
+let ghost=FREE;
+try{const s=localStorage.getItem(DRAFT);const d=s&&JSON.parse(s);if(d&&d.px&&d.px.length===N*N){px=FREE?d.px:sanitize(d.px);}}catch(e){}
+
+function snapshot(){history.push({px:px.slice(),w:[...worn]});if(history.length>60)history.shift();}
+function put([x,y,c]){const i=y*N+x;if(x<0||y<0||x>=N||y>=N||LK(i))return;px[i]=c;}
+function erase(i){px[i]=!FREE&&SHAPE[i]?basePx()[i]:0;}
+// 戴上配件前先記住原本的像素，拿掉時還原
+const under={};
+function toggleStamp(s,btn){
+  snapshot();
+  if(worn.has(s.name)){(under[s.name]||[]).forEach(([i,c])=>px[i]=c);worn.delete(s.name);}
+  else{under[s.name]=s.pts.map(([x,y])=>[y*N+x,px[y*N+x]]);s.pts.forEach(put);worn.add(s.name);}
+  btn.classList.toggle('on',worn.has(s.name));draw();
+}
+function setFace(f){snapshot();FACE.forEach((on,i)=>{if(on)px[i]=3;});f.pts.forEach(put);
+  ['眼鏡','腮紅'].forEach(n=>{if(worn.has(n)){const s=STAMPS.find(x=>x.name===n);under[n]=s.pts.map(([x,y])=>[y*N+x,px[y*N+x]]);s.pts.forEach(put);}});draw();}
+function chipCanvas(p){const c=document.createElement('canvas');paintPx(c,p);return c;}
+const fbox=document.getElementById('faces');
+FACES.forEach(f=>{const b=document.createElement('button');b.className='chip';
+  const p=basePx();FACE.forEach((on,i)=>{if(on)p[i]=3;});f.pts.forEach(([x,y,c])=>p[y*N+x]=c);
+  b.appendChild(chipCanvas(p));b.append(f.name);b.onclick=()=>setFace(f);fbox.appendChild(b);});
+const sbox=document.getElementById('stamps');
+STAMPS.forEach(s=>{const b=document.createElement('button');b.className='chip';
+  const p=basePx();s.pts.forEach(([x,y,c])=>{if(!LOCK[y*N+x])p[y*N+x]=c;});
+  b.appendChild(chipCanvas(p));b.append(s.name);b.onclick=()=>toggleStamp(s,b);sbox.appendChild(b);});
+
+const pal=document.getElementById('pal');
+PAL.forEach((c,i)=>{const d=document.createElement('div');d.className='sw'+(i===0?' erase':'')+(i===color?' on':'');
+  if(c)d.style.background=c;d.title=i===0?'橡皮擦（身體裡會還原成原本的顏色）':c;
+  d.onclick=()=>{color=i;[...pal.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');};pal.appendChild(d);});
+
+const walker=document.getElementById('walker');
+function draw(){
+  const s=grid.width/N;g.clearRect(0,0,grid.width,grid.height);
+  for(let i=0;i<N*N;i++){const c=PAL[px[i]];if(c){g.fillStyle=c;g.fillRect((i%N)*s,((i/N)|0)*s,s,s);}}
+  g.strokeStyle='rgba(120,90,70,.10)';g.lineWidth=1;
+  for(let i=1;i<N;i++){g.beginPath();g.moveTo(i*s+.5,0);g.lineTo(i*s+.5,grid.height);g.stroke();g.beginPath();g.moveTo(0,i*s+.5);g.lineTo(grid.width,i*s+.5);g.stroke();}
+  // 鎖定的外框畫上斜線
+  g.strokeStyle='rgba(255,255,255,.45)';
+  if(FREE&&ghost){g.globalAlpha=.18;const b=basePx();for(let i=0;i<N*N;i++){const c=PAL[b[i]];if(c&&!px[i]){g.fillStyle=c;g.fillRect((i%N)*s,((i/N)|0)*s,s,s);}}g.globalAlpha=1;}
+  for(let i=0;i<N*N;i++)if(LK(i)){const x=(i%N)*s,y=((i/N)|0)*s;g.beginPath();g.moveTo(x+s*.25,y+s*.75);g.lineTo(x+s*.75,y+s*.25);g.stroke();}
+  if(mirror){g.strokeStyle='rgba(236,143,92,.8)';g.beginPath();g.moveTo(grid.width/2,0);g.lineTo(grid.width/2,grid.height);g.stroke();}
+  paintPx(walker,px);
+  const code=encode(px);out.value=code;
+  try{localStorage.setItem(DRAFT,JSON.stringify({px}));}catch(e){}
+}
+function paint(x,y){if(color===0){const i=y*N+x;if(!LK(i))erase(i);if(mirror){const j=y*N+(N-1-x);if(!LK(j))erase(j);}return;}
+  put([x,y,color]);if(mirror)put([N-1-x,y,color]);}
+function fill(x,y){const t=px[y*N+x];if(LK(y*N+x))return;const c=color===0?null:color;if(t===c)return;const st=[[x,y]],seen=new Set();
+  while(st.length){const [a,b]=st.pop();const i=b*N+a;if(a<0||b<0||a>=N||b>=N||seen.has(i)||LK(i)||px[i]!==t)continue;seen.add(i);
+    if(c===null)erase(i);else px[i]=c;st.push([a+1,b],[a-1,b],[a,b+1],[a,b-1]);}}
+let down=false;
+function cell(e){const r=grid.getBoundingClientRect();return[Math.floor((e.clientX-r.left)/r.width*N),Math.floor((e.clientY-r.top)/r.height*N)];}
+grid.addEventListener('pointerdown',e=>{down=true;grid.setPointerCapture(e.pointerId);snapshot();const [x,y]=cell(e);
+  if(LK(y*N+x)&&tool==='pen')toast('外框和天線是灯芯的形狀，不能改喔');
+  if(tool==='fill'){fill(x,y);if(mirror)fill(N-1-x,y);}else paint(x,y);draw();});
+grid.addEventListener('pointermove',e=>{if(!down||tool!=='pen')return;const [x,y]=cell(e);paint(x,y);draw();});
+addEventListener('pointerup',()=>down=false);
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('on',x===b));});
+const mb=document.getElementById('mirror');mb.onclick=()=>{mirror=!mirror;mb.classList.toggle('on',mirror);draw();};
+document.getElementById('undo').onclick=()=>{const h=history.pop();if(!h)return;px=h.px;worn.clear();h.w.forEach(n=>worn.add(n));
+  [...sbox.children].forEach((b,i)=>b.classList.toggle('on',worn.has(STAMPS[i].name)));draw();};
+document.getElementById('reset').onclick=()=>{snapshot();px=basePx();worn.clear();[...sbox.children].forEach(b=>b.classList.remove('on'));draw();};
+
+const out=document.getElementById('out'),inp=document.getElementById('inp');
+document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(out.value);}catch(e){out.select();document.execCommand('copy');}toast('已複製！貼到聊天室吧 ✦');};
+document.getElementById('load').onclick=()=>{const d=FREE?decodeRaw(inp.value):decode(inp.value);if(!d){toast('咒語好像不完整喔');return;}
+  snapshot();px=d;worn.clear();
+  [...sbox.children].forEach(b=>b.classList.remove('on'));draw();toast('讀取成功！');};
+
+const stage=document.getElementById('stage');
+for(let i=0;i<14;i++){const s=document.createElement('div');s.className='spark';s.textContent='✦';s.style.left=Math.random()*95+'%';s.style.top=Math.random()*60+'%';stage.appendChild(s);}
+let wx=20,dir=1,t0=performance.now();
+function loop(t){const dt=Math.min(.05,(t-t0)/1000);t0=t;const W=stage.clientWidth-72;wx+=dir*45*dt;if(wx>W){wx=W;dir=-1;}if(wx<0){wx=0;dir=1;}
+  walker.style.left=wx+'px';walker.style.transform=`translateY(${-Math.abs(Math.sin(t/140))*8}px) scaleX(${dir})`;requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+let tt;function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),1800);}
+if(FREE){
+  document.querySelector('header p').textContent='自由模式：不限外框，可以畫你自己的造型或限定配件';
+  document.querySelector('.hint').textContent='淡淡的灯芯只是參考線，不會出現在咒語裡。畫配件時先按「清空成透明」，只畫配件的部分。';
+  const tools=document.querySelector('.tools');
+  const c=document.createElement('button');c.className='chip';c.textContent='⬜ 清空成透明';
+  c.onclick=()=>{snapshot();px=new Array(N*N).fill(0);draw();};tools.appendChild(c);
+  const gb=document.createElement('button');gb.className='chip on';gb.textContent='👻 參考灯芯';
+  gb.onclick=()=>{ghost=!ghost;gb.classList.toggle('on',ghost);draw();};tools.appendChild(gb);
+}
+draw();
+</script>
+</body>
+</html>
