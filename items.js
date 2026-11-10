@@ -34,8 +34,7 @@
 */
 // window.AKARI_ITEMS_URL = 'https://你的帳號.github.io/pixel/items.js';
 window.AKARI_ITEMS = [
-  { name: '應援螢光棒', type: '配件', code: '灯px:BDw8PDw9AIAsgQFBAC0BQABALEAEQCxACEAkQAxAJEA8PDw8PAQ', from: '2026-12-12', to: '2026-12-13' },
-  { name: '聖誕帽',     type: '配件', code: '灯px:BDwsgC3IgCXMJdQgnDw8PDw8PDw8PDwM', from: '2026-12-20', to: '2026-12-26' },
-  { name: '小幽靈',     type: '造型', code: '灯px:BDw8ExQjAJcAGwCfABcAgESERIMAFwCARIREgwAXAJ8AFwCCAIHEggCDABcAnwAXAJ8AFwCfABcAnwAXAIMAgwSDAIMAFwQDBAMEAwA8C', from: '2027-10-25', to: '2027-10-31' },
+  { name: '聖誕帽',     type: '配件', code: '灯px:BDwsgC3IgCXMJdQgnDw8PDw8PDw8PDwM', from: '2026-12-24', to: '2026-12-25' },
+  { name: '小幽靈',     type: '造型', code: '灯px:BDw8ExQjAJcAGwCfABcAgESERIMAFwCARIREgwAXAJ8AFwCCAIHEggCDABcAnwAXAJ8AFwCfABcAnwAXAIMAgwSDAIMAFwQDBAMEAwA8C', from: '2027-10-31', to: '2027-11-1' },
  { name: '便便',     type: '配件', code: '灯px:BDBAIEAUQBhBgEAsQYhAGEAEWBBABEWUQBhgPDw8PDw8PDw8D', from: '2026-11-10', to: '2026-11-10' },
 ];
