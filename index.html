@@ -298,6 +298,15 @@ draw();
 @media (min-width:1180px){.gtoggle{display:block}body.ghide .side{display:none}}
 .gtips{font-size:12px;line-height:1.7;color:var(--ink);margin:0;padding-left:18px}
 .gtips li{margin-bottom:4px}.gtips b{color:#c0475a}
+.gitems{border-top:1px dashed var(--line);margin-top:4px;padding-top:8px}
+.gi{display:flex;align-items:center;gap:9px;padding:6px 0}
+.gi canvas{width:40px;height:40px;image-rendering:pixelated;flex:none;background:#f6f1eb;border-radius:8px}
+.gi .gii{flex:1;min-width:0}
+.gi .gin{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.gtype{flex:none;white-space:nowrap;font-size:10px;font-weight:700;color:#fff;background:#c9a8ff;border-radius:999px;padding:1px 6px}
+.gi .gwhen{font-size:11px;color:var(--sub)}
+.gi.open .gwhen{color:#2fa77a;font-weight:700}
+.gi.end{opacity:.45}
 .gadmin{background:#f7f3f8;border-style:dashed}.gadmin h3{color:#8a6f9e}
 .gwarn{font-size:12px;font-weight:700;color:#c0475a;background:#fff;border:1px solid #f1d6dc;border-radius:9px;padding:6px 9px;margin-bottom:6px}
 .gitem{border-top:1px dashed var(--line);padding:8px 0}
@@ -334,12 +343,13 @@ const TIPS=['<b>指令要「單獨」一則留言</b>，前後加了別的字就
   '名字＝對方灯芯腳下顯示的名字。打 @ 從名單點選最方便，只打一部分也可以',
   '「灯」打成「燈」也可以',
   '15 分鐘沒留言，灯芯會先回家休息，再留言就回來',
-  '小心饅頭（灯理家的白貓），被追到會被拍飛，跟它打架永遠贏不了'];
+  '小心饅頭（灯理家的白貓），被追到會被拍飛，跟它打架永遠贏不了',
+  'Super Chat、加入會員、贈送會員等都有特別效果，丟了就知道 ✦'];
 const SECS=[
  {id:'cheer',t:'🎤 歌回應援',items:[
-  {c:'粉',l:'舉起應援螢光棒',n:'打一個顏色就好：粉 紅 橘 灯色 黃 綠 藍 水藍 紫 白，或愛心表情',chips:['粉','紅','橘','灯色','黃','綠','藍','水藍','紫','白','💗','❤️','🧡','💛','💚','💙','🩵','💜','🤍']},
+  {c:'粉',l:'舉起應援螢光棒',n:'打一個顏色就好：粉 紅 橘 灯色 黃 綠 藍 水藍 紫 白 黑，或愛心表情',chips:['粉','紅','橘','灯色','黃','綠','藍','水藍','紫','白','黑','💗','❤️','🧡','💛','💚','💙','🩵','💜','🤍','🖤']},
   {c:'放下',l:'收起螢光棒'},
-  {c:'⭐',l:'星星飛上天',n:'打「許願」也可以'},
+  {c:'⭐',l:'星星飛上天',n:'⭐ 🌟 ✨ 或「許願」都可以',chips:['⭐','🌟','✨','許願']},
   {c:'灯wave',l:'大家一起跑人浪',n:'「灯wave 3」連續三波；全場 12 秒一次'}]},
  {id:'play',t:'🎮 一起玩',items:[
   {c:'疊',l:'跳上去疊羅漢'},
@@ -392,6 +402,33 @@ function tips(){const box=document.createElement('section');box.className='gsec'
 const L=document.getElementById('sideL'),R=document.getElementById('sideR'),D=document.getElementById('dbody');
 L.append(tips(),sec(SECS[0]));SECS.slice(1).forEach(s=>R.appendChild(sec(s)));
 D.appendChild(tips());SECS.forEach(s=>D.appendChild(sec(s)));
+// ---- 目前的限定配件：讀同一個網站上的 items.js ----
+function twToday(){try{return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Taipei'}).format(new Date());}catch(e){return new Date().toISOString().slice(0,10);}}
+const md=d=>d?(+d.slice(5,7))+'/'+(+d.slice(8,10)):'';
+function renderItems(){
+  const list=(window.AKARI_ITEMS||[]).map(it=>({...it,px:decodeRaw(it.code)})).filter(it=>it.name&&it.px);
+  const t=twToday();
+  list.forEach(it=>{it.st=it.from&&t<it.from?'soon':it.to&&t>it.to?'end':'open';});
+  const order={open:0,soon:1,end:2};list.sort((a,b)=>order[a.st]-order[b.st]||String(a.from||'').localeCompare(String(b.from||'')));
+  document.querySelectorAll('.gsec[data-k="item"]').forEach(box=>{
+    const wrap=document.createElement('div');wrap.className='gitems';
+    const h=document.createElement('div');h.className='gnote';h.style.fontWeight='700';h.style.color='var(--ink)';h.textContent='目前的限定配件';wrap.appendChild(h);
+    if(!list.length){const e=document.createElement('div');e.className='gnote';e.textContent='目前還沒有限定配件，敬請期待 ✦';wrap.appendChild(e);}
+    list.forEach(it=>{
+      const r=document.createElement('div');r.className='gi '+it.st;
+      const cv=document.createElement('canvas');
+      let px=it.type==='造型'?it.px.slice():basePx();if(it.type!=='造型')it.px.forEach((c,i)=>{if(c)px[i]=c;});paintPx(cv,px);
+      const info=document.createElement('div');info.className='gii';
+      const nm=document.createElement('div');nm.className='gin';nm.textContent=it.name;
+      const tg=document.createElement('span');tg.className='gtype';tg.textContent=it.type==='造型'?'造型':'配件';nm.appendChild(tg);
+      const when=document.createElement('div');when.className='gwhen';
+      when.textContent=it.st==='open'?(it.to?`兌換中・到 ${md(it.to)}`:'隨時可以兌換'):it.st==='soon'?`${md(it.from)} 開放兌換`:'已結束';
+      info.append(nm,when);r.append(cv,info);
+      if(it.st==='open'){const cb=copyBtn('灯get '+it.name);cb.style.marginTop='5px';info.appendChild(cb);}
+      wrap.appendChild(r);});
+    box.appendChild(wrap);});
+}
+const isc=document.createElement('script');isc.src='items.js?t='+Date.now();isc.onload=renderItems;isc.onerror=renderItems;document.body.appendChild(isc);
 const open=v=>document.body.classList.toggle('gopen',v);
 document.getElementById('gtab').onclick=()=>open(true);
 document.getElementById('gclose').onclick=()=>open(false);
