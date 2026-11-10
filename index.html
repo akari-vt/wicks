@@ -283,5 +283,108 @@ if(FREE){
 }
 draw();
 </script>
+<style>
+/* ===== 指令說明：寬螢幕放在左右兩側，手機版從左邊拉出來 ===== */
+.side{position:fixed;top:18px;bottom:18px;width:300px;overflow:auto;display:none;padding-bottom:10px}
+.side.l{right:calc(50% + 280px)}.side.r{left:calc(50% + 280px)}
+@media (min-width:1180px){.side{display:block}.gtab,.drawer,.dmask{display:none!important}}
+.gsec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 12px 6px;margin-bottom:14px;box-shadow:0 4px 18px rgba(170,130,100,.08)}
+.gsec h3{margin:0 0 8px;font-size:14px;color:var(--accent);letter-spacing:.08em}
+.gtips{font-size:12px;line-height:1.7;color:var(--ink);margin:0;padding-left:18px}
+.gtips li{margin-bottom:4px}.gtips b{color:#c0475a}
+.gadmin{background:#f7f3f8;border-style:dashed}.gadmin h3{color:#8a6f9e}
+.gwarn{font-size:12px;font-weight:700;color:#c0475a;background:#fff;border:1px solid #f1d6dc;border-radius:9px;padding:6px 9px;margin-bottom:6px}
+.gitem{border-top:1px dashed var(--line);padding:8px 0}
+.gitem:first-of-type{border-top:0}
+.grow{display:flex;align-items:center;gap:8px}
+.gcmd{font:600 14px ui-monospace,Menlo,"Noto Sans TC",monospace;background:#fff;border:1px solid var(--line);border-radius:9px;padding:5px 9px;
+  cursor:pointer;white-space:pre;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.gcmd::after{content:"⧉";font-size:11px;color:var(--sub)}
+.gcmd:hover{border-color:var(--accent)}
+.gcmd.ok{background:var(--accent);border-color:var(--accent);color:#fff}.gcmd.ok::after{content:"✓";color:#fff}
+.glabel{font-size:13px;font-weight:700}
+.gnote{font-size:12px;color:var(--sub);margin-top:4px;line-height:1.6}
+.gchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.gchips .gcmd{font-size:13px;padding:3px 8px}
+.gtab{position:fixed;left:0;top:42%;z-index:30;writing-mode:vertical-rl;letter-spacing:.15em;font:700 12px/1 "Noto Sans TC",sans-serif;
+  color:#fff;background:var(--accent);border:0;border-radius:0 10px 10px 0;padding:12px 4px;width:22px;cursor:pointer;box-shadow:2px 4px 14px rgba(170,110,60,.25)}
+.dmask{position:fixed;inset:0;background:rgba(60,40,50,.25);opacity:0;pointer-events:none;transition:.25s;z-index:40}
+.drawer{position:fixed;left:0;top:0;bottom:0;width:min(86vw,340px);background:var(--bg);z-index:41;transform:translateX(-102%);transition:transform .28s ease;
+  overflow:auto;padding:14px 14px 30px;box-shadow:4px 0 24px rgba(80,50,40,.18)}
+.drawer .dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.drawer .dhead b{color:var(--accent);letter-spacing:.12em}
+.drawer .dhead button{font:inherit;border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:5px 11px;cursor:pointer;color:var(--ink)}
+body.gopen .drawer{transform:none}body.gopen .dmask{opacity:1;pointer-events:auto}
+</style>
+<button class="gtab" id="gtab">指令說明</button>
+<div class="dmask" id="dmask"></div>
+<aside class="drawer" id="drawer"><div class="dhead"><b>✦ 指令說明</b><button id="gclose">✕ 關閉</button></div><div id="dbody"></div></aside>
+<aside class="side l" id="sideL"></aside>
+<aside class="side r" id="sideR"></aside>
+<script>
+(()=>{
+const TIPS=['<b>指令要「單獨」一則留言</b>，前後加了別的字就沒效。（⭐、許願、🍫 和「灯px」咒語例外，混在一般留言裡也可以）',
+  '名字＝對方灯芯腳下顯示的名字。打 @ 從名單點選最方便，只打一部分也可以',
+  '「灯」打成「燈」也可以',
+  '15 分鐘沒留言，灯芯會先回家休息，再留言就回來',
+  '小心饅頭（灯理家的白貓），被追到會被拍飛，跟它打架永遠贏不了'];
+const SECS=[
+ {id:'cheer',t:'🎤 歌回應援',items:[
+  {c:'粉',l:'舉起應援螢光棒',n:'打一個顏色就好：粉 紅 橘 灯色 黃 綠 藍 水藍 紫 白，或愛心表情',chips:['粉','紅','橘','灯色','黃','綠','藍','水藍','紫','白','💗','❤️','🧡','💛','💚','💙','🩵','💜','🤍']},
+  {c:'放下',l:'收起螢光棒'},
+  {c:'⭐',l:'星星飛上天',n:'打「許願」也可以'},
+  {c:'灯wave',l:'大家一起跑人浪',n:'「灯wave 3」連續三波；全場 12 秒一次'}]},
+ {id:'play',t:'🎮 一起玩',items:[
+  {c:'疊',l:'跳上去疊羅漢'},
+  {c:'下來',l:'從疊羅漢跳下來'},
+  {c:'灯抱 ',l:'抱抱',n:'後面空一格接對方名字；每人 8 秒一次'},
+  {c:'灯打 ',l:'打一架，輸的會飛走',n:'後面空一格接對方名字；每人 8 秒一次'},
+  {c:'灯bomb',l:'丟炸彈',n:'「灯bomb 名字」丟在他旁邊；每人 30 秒一次'},
+  {c:'🍫',l:'掉巧克力給大家搶'},
+  {c:'1',l:'投票時站到左邊',n:'投票進行中才有效；「2」站到右邊'}]},
+ {id:'item',t:'🎁 限定配件',items:[
+  {c:'灯get ',l:'兌換限定配件',n:'後面接配件名稱，只在活動期間有效'},
+  {c:'灯wear ',l:'戴上／拿下配件',n:'後面接配件名稱；「灯wear 無」全部拿下'}]},
+];
+SECS.push({id:'admin',t:'👑 灯理／管理員專用',warn:'這區只有灯理和管理員打才有效，觀眾打了不會有反應',items:[
+  {c:'灯sway',l:'全員一起左右搖',n:'「灯sway 停」恢復'},
+  {c:'灯星空',l:'星星全部變流星'},
+  {c:'灯vote 選項A 選項B',l:'開始站隊投票',n:'不寫選項就是 1／2'},
+  {c:'灯vote 結束',l:'結束投票'},
+  {c:'灯zoom ',l:'夾娃娃機特寫',n:'接名字；不寫名字隨機夾一隻'},
+  {c:'灯饅頭',l:'饅頭暴走',n:'「灯饅頭 名字」追指定的人；「灯饅頭 睡覺」「灯饅頭 坐下」'},
+  {c:'灯give ',l:'送配件',n:'灯give 名字 配件名（不受日期限制）'},
+  {c:'灯take ',l:'收回配件',n:'灯take 名字 配件名'},
+  {c:'灯reset ',l:'把灯芯換回預設',n:'接名字；有人畫了不妥內容時用'}]});
+function copyBtn(text,big){
+  const b=document.createElement('button');b.className='gcmd';b.textContent=text.trimEnd()||text;
+  b.onclick=async()=>{try{await navigator.clipboard.writeText(text);}catch(e){const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}
+    b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200);
+    toast(/ $/.test(text)?`已複製「${text.trim()}」，貼上後在後面加上名字`:`已複製「${text}」`);};
+  return b;
+}
+function sec(s){
+  const box=document.createElement('section');box.className='gsec'+(s.warn?' gadmin':'');const h=document.createElement('h3');h.textContent=s.t;box.appendChild(h);
+  if(s.warn){const w=document.createElement('div');w.className='gwarn';w.textContent=s.warn;box.appendChild(w);}
+  s.items.forEach(it=>{const d=document.createElement('div');d.className='gitem';
+    const r=document.createElement('div');r.className='grow';r.appendChild(copyBtn(it.c));
+    const l=document.createElement('span');l.className='glabel';l.textContent=it.l;r.appendChild(l);d.appendChild(r);
+    if(it.n){const n=document.createElement('div');n.className='gnote';n.textContent=it.n;d.appendChild(n);}
+    if(it.chips){const c=document.createElement('div');c.className='gchips';it.chips.forEach(x=>c.appendChild(copyBtn(x)));d.appendChild(c);}
+    box.appendChild(d);});
+  return box;
+}
+function tips(){const box=document.createElement('section');box.className='gsec';box.innerHTML='<h3>⚠️ 使用前先看</h3>';
+  const ul=document.createElement('ul');ul.className='gtips';TIPS.forEach(t=>{const li=document.createElement('li');li.innerHTML=t;ul.appendChild(li);});box.appendChild(ul);return box;}
+const L=document.getElementById('sideL'),R=document.getElementById('sideR'),D=document.getElementById('dbody');
+L.append(tips(),sec(SECS[0]));SECS.slice(1).forEach(s=>R.appendChild(sec(s)));
+D.appendChild(tips());SECS.forEach(s=>D.appendChild(sec(s)));
+const open=v=>document.body.classList.toggle('gopen',v);
+document.getElementById('gtab').onclick=()=>open(true);
+document.getElementById('gclose').onclick=()=>open(false);
+document.getElementById('dmask').onclick=()=>open(false);
+})();
+</script>
+
 </body>
 </html>
