@@ -289,7 +289,13 @@ draw();
 .side.l{right:calc(50% + 280px)}.side.r{left:calc(50% + 280px)}
 @media (min-width:1180px){.side{display:block}.gtab,.drawer,.dmask{display:none!important}}
 .gsec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 12px 6px;margin-bottom:14px;box-shadow:0 4px 18px rgba(170,130,100,.08)}
-.gsec h3{margin:0 0 8px;font-size:14px;color:var(--accent);letter-spacing:.08em}
+.gsec h3{margin:0 0 8px;font-size:14px;color:var(--accent);letter-spacing:.08em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.gsec h3::after{content:"▾";font-size:12px;color:var(--sub);transition:transform .2s}
+.gsec.fold h3{margin-bottom:6px}.gsec.fold h3::after{transform:rotate(-90deg)}
+.gsec.fold>:not(h3){display:none}
+.gtoggle{position:fixed;left:18px;bottom:18px;z-index:20;display:none;font:700 13px "Noto Sans TC",sans-serif;color:var(--ink);
+  background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;box-shadow:0 4px 14px rgba(170,130,100,.15)}
+@media (min-width:1180px){.gtoggle{display:block}body.ghide .side{display:none}}
 .gtips{font-size:12px;line-height:1.7;color:var(--ink);margin:0;padding-left:18px}
 .gtips li{margin-bottom:4px}.gtips b{color:#c0475a}
 .gadmin{background:#f7f3f8;border-style:dashed}.gadmin h3{color:#8a6f9e}
@@ -317,6 +323,7 @@ draw();
 body.gopen .drawer{transform:none}body.gopen .dmask{opacity:1;pointer-events:auto}
 </style>
 <button class="gtab" id="gtab">指令說明</button>
+<button class="gtoggle" id="gtoggle">📖 收起說明</button>
 <div class="dmask" id="dmask"></div>
 <aside class="drawer" id="drawer"><div class="dhead"><b>✦ 指令說明</b><button id="gclose">✕ 關閉</button></div><div id="dbody"></div></aside>
 <aside class="side l" id="sideL"></aside>
@@ -356,6 +363,12 @@ SECS.push({id:'admin',t:'👑 灯理／管理員專用',warn:'這區只有灯理
   {c:'灯give ',l:'送配件',n:'灯give 名字 配件名（不受日期限制）'},
   {c:'灯take ',l:'收回配件',n:'灯take 名字 配件名'},
   {c:'灯reset ',l:'把灯芯換回預設',n:'接名字；有人畫了不妥內容時用'}]});
+// 折疊：點標題收起／展開，記住每一區的狀態（電腦版和手機版共用）
+const FKEY='guideFold';let folds={};try{folds=JSON.parse(localStorage.getItem(FKEY))||{};}catch(e){}
+function foldable(box,h){if(folds[box.dataset.k])box.classList.add('fold');
+  h.onclick=()=>{const on=!box.classList.contains('fold');
+    document.querySelectorAll(`.gsec[data-k="${box.dataset.k}"]`).forEach(b=>b.classList.toggle('fold',on));
+    folds[box.dataset.k]=on;try{localStorage.setItem(FKEY,JSON.stringify(folds));}catch(e){}};}
 function copyBtn(text,big){
   const b=document.createElement('button');b.className='gcmd';b.textContent=text.trimEnd()||text;
   b.onclick=async()=>{try{await navigator.clipboard.writeText(text);}catch(e){const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}
@@ -364,7 +377,7 @@ function copyBtn(text,big){
   return b;
 }
 function sec(s){
-  const box=document.createElement('section');box.className='gsec'+(s.warn?' gadmin':'');const h=document.createElement('h3');h.textContent=s.t;box.appendChild(h);
+  const box=document.createElement('section');box.className='gsec'+(s.warn?' gadmin':'');box.dataset.k=s.id;const h=document.createElement('h3');h.textContent=s.t;box.appendChild(h);foldable(box,h);
   if(s.warn){const w=document.createElement('div');w.className='gwarn';w.textContent=s.warn;box.appendChild(w);}
   s.items.forEach(it=>{const d=document.createElement('div');d.className='gitem';
     const r=document.createElement('div');r.className='grow';r.appendChild(copyBtn(it.c));
@@ -374,7 +387,7 @@ function sec(s){
     box.appendChild(d);});
   return box;
 }
-function tips(){const box=document.createElement('section');box.className='gsec';box.innerHTML='<h3>⚠️ 使用前先看</h3>';
+function tips(){const box=document.createElement('section');box.className='gsec';box.dataset.k='tips';box.innerHTML='<h3>⚠️ 使用前先看</h3>';foldable(box,box.firstChild);
   const ul=document.createElement('ul');ul.className='gtips';TIPS.forEach(t=>{const li=document.createElement('li');li.innerHTML=t;ul.appendChild(li);});box.appendChild(ul);return box;}
 const L=document.getElementById('sideL'),R=document.getElementById('sideR'),D=document.getElementById('dbody');
 L.append(tips(),sec(SECS[0]));SECS.slice(1).forEach(s=>R.appendChild(sec(s)));
@@ -383,6 +396,11 @@ const open=v=>document.body.classList.toggle('gopen',v);
 document.getElementById('gtab').onclick=()=>open(true);
 document.getElementById('gclose').onclick=()=>open(false);
 document.getElementById('dmask').onclick=()=>open(false);
+// 電腦版：整個收起兩側說明
+const gt=document.getElementById('gtoggle');
+function setHide(v){document.body.classList.toggle('ghide',v);gt.textContent=v?'📖 顯示指令說明':'📖 收起說明';try{localStorage.setItem('guideHide',v?'1':'');}catch(e){}}
+let hid=false;try{hid=localStorage.getItem('guideHide')==='1';}catch(e){}setHide(hid);
+gt.onclick=()=>setHide(!document.body.classList.contains('ghide'));
 })();
 </script>
 
