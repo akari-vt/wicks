@@ -2,84 +2,104 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>灯芯像素工房</title>
+<title>灯芯遊行</title>
+<!--
+  灯理 ― 灯芯遊行（わんコメ / OneComme 用，平常直播都能用）
+  ・留言的人會變成灯芯在畫面下方走來走去，頭上冒出留言泡泡，名字旁邊顯示會員徽章
+  ・在聊天室貼「灯px:…」咒語（灯芯像素工房產生）就換成自己打扮的灯芯，之後每次留言都沿用
+  ・Super Chat：跳起來＋金色星星＋泡泡上顯示金額；這場直播之後的留言都戴皇冠、泡泡是金色（重新載入來源後重置）
+  ・新會員：愛心飄起來　・會員里程碑：彩帶噴發　・贈送會員：灑出禮物盒　・收到會員禮物：小愛心
+  ・管理：灯理或管理員留言「灯reset 名字」，可以把那個人自己畫的灯芯換回預設
+  ・灯理本人：在工房的自由模式（網址加 ?free=1）畫的造型不受外框限制，只有頻道主的留言才會照原樣顯示
+  ・限定配件／特殊造型：寫在同資料夾的 items.js（說明在那個檔案裡）
+      觀眾：「灯get 名字」兌換（只在開放日期內有效）、「灯wear 名字」戴上／拿下、「灯wear 無」全部拿下
+      灯理或管理員：「灯give 觀眾名字 配件名字」直接送、「灯take 觀眾名字 配件名字」收回
+  ・URL 參數（加在 OBS 網址後面，例如 ?size=4&y=0.95）：
+      size   像素放大倍率（預設 4 → 64px）       y     走路的高度（0~1，預設 0.96 = 畫面底部）
+      max    同時最多幾隻（預設 40）              idle  幾分鐘沒留言就離場（預設 15）
+      bubble 泡泡顯示秒數（預設 5）               owner 0 = 灯理自己的留言不出場（預設會出場）
+      demo   1 = 示範模式，不用開直播也會有假灯芯（含 SC、會員、贈訂、里程碑示範）
+      debug  1 = 左下角一直顯示連線狀態
+-->
 <style>
-:root{--bg:#fbf7f2;--card:#fffdfa;--line:#eee3d7;--ink:#4b3f4e;--sub:#9c9099;--accent:#ee9a52;--accent2:#e9a7ba;--chip:#f8f1ea}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
-body{min-height:100vh;background:radial-gradient(900px 420px at 50% -8%,#fde9d4 0,transparent 65%),radial-gradient(700px 360px at 100% 100%,#f6e6ef 0,transparent 65%),var(--bg)}
-.wrap{max-width:520px;margin:0 auto;padding:18px 16px 40px}
-header{text-align:center;padding:8px 0 4px}
-header .en{font-size:11px;letter-spacing:.35em;color:var(--accent)}
-header h1{margin:6px 0 4px;font-size:24px;letter-spacing:.1em;font-weight:700}
-header p{margin:0;font-size:13px;color:var(--sub)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:14px;box-shadow:0 4px 18px rgba(170,130,100,.08)}
-.card h2{margin:0 0 10px;font-size:14px;color:var(--accent);letter-spacing:.1em;font-weight:700}
-.card h2 small{color:var(--sub);font-weight:400;letter-spacing:0;margin-left:6px}
-#grid{display:block;width:100%;aspect-ratio:1;touch-action:none;border-radius:12px;cursor:crosshair;
-  background:repeating-conic-gradient(#f6f1eb 0 25%,#ece5dd 0 50%) 0 0/12.5% 12.5%}
-.row{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font:inherit;font-size:13px;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:7px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.chip canvas{width:22px;height:22px;image-rendering:pixelated}
-.palette{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:2px}
-.sw{aspect-ratio:1;border-radius:9px;border:2px solid rgba(0,0,0,.04);cursor:pointer}
-.sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--accent)}
-.sw.erase{background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/10px 10px}
-.tools{margin-top:12px}
-.stage{height:130px;border-radius:14px;position:relative;overflow:hidden;background:linear-gradient(#fff3e3,#f8ecf3)}
-.stage .ground{position:absolute;left:0;right:0;bottom:0;height:22px;background:#f1e3d4;border-top:2px solid #e8d4c0}
-#walker{position:absolute;bottom:20px;width:72px;height:72px;image-rendering:pixelated}
-.spark{position:absolute;color:#f3c26b;font-size:12px;opacity:.7}
-.code{display:flex;gap:6px;margin-top:10px}
-.code input{flex:1;min-width:0;font:13px ui-monospace,Menlo,monospace;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
-button.main{font:inherit;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(90deg,#f5b56c,#ec8f5c);border:0;border-radius:999px;padding:10px 18px;cursor:pointer}
-.hint{font-size:12px;color:var(--sub);line-height:1.7;margin:8px 0 0}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);opacity:0;background:#4b3f4e;color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;transition:.25s}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;
+  font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif}
+#stage{position:fixed;inset:0;pointer-events:none}
+.w{position:absolute;left:0;top:0;will-change:transform;transition:opacity .8s}
+.w .body{position:relative}
+.w canvas.me{display:block;image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(60,30,20,.45))}
+.w .shadow{position:absolute;left:18%;right:18%;bottom:-5px;height:5px;border-radius:50%;background:rgba(0,0,0,.25)}
+.w .name{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:7px;white-space:nowrap;
+  display:flex;align-items:center;gap:3px;font-size:14px;font-weight:700;color:#fff;letter-spacing:.03em;
+  text-shadow:0 0 3px #3a2a2a,0 0 3px #3a2a2a,0 0 6px #3a2a2a}
+.w .name span{max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.w .name img{width:16px;height:16px;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
+.w .bubble{position:absolute;left:50%;bottom:100%;margin-bottom:10px;transform:translateX(-50%) scale(.6);opacity:0;
+  transform-origin:50% 100%;transition:transform .25s cubic-bezier(.3,1.6,.6,1),opacity .2s;
+  background:#fff;color:#3a2a33;border:2.5px solid #3a2a33;border-radius:13px;padding:5px 10px;
+  font-size:16px;font-weight:700;line-height:1.35;max-width:250px;width:max-content;word-break:break-word;text-align:center}
+.w .bubble::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#3a2a33}
+.w .bubble img{height:1.25em;vertical-align:-.22em}
+.w .bubble img.sticker{height:56px;display:block;margin:2px auto 0}
+.w .bubble.show{transform:translateX(-50%) scale(1);opacity:1}
+.w .bubble.tagonly{background:none!important;border:0;padding:0}
+.w .bubble.tagonly::after{display:none}
+.w .bubble.tagonly .tag{margin:0;font-size:15px;padding:3px 12px}
+.w .tag{display:block;width:max-content;margin:-17px auto 3px;padding:1px 9px;border-radius:999px;font-size:13px;letter-spacing:.04em;
+  color:#fff;border:2px solid #3a2a33;background:#3a2a33;white-space:nowrap}
+.w .tag.sc{background:linear-gradient(90deg,#ffb84d,#f08a3c)}
+.w .tag.member{background:linear-gradient(90deg,#ff8fb8,#f06292)}
+.w .tag.mile{background:linear-gradient(90deg,#a98bff,#7c5cff)}
+.w .tag.gift{background:linear-gradient(90deg,#5fcf9f,#2fa77a)}
+.w.sc .bubble{background:linear-gradient(135deg,#fff6d6,#ffe08a)}
+.w.sc canvas.me{filter:drop-shadow(0 0 5px #ffd95e) drop-shadow(0 0 10px #ffb03b)}
+.w .crown{position:absolute;left:50%;top:-14px;transform:translateX(-50%);font-size:15px;display:none}
+.w.sc .crown{display:block}
+.p{position:absolute;left:0;top:0;pointer-events:none;will-change:transform}
+.p.star{width:8px;height:8px;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.p.heart{font-size:18px;line-height:1;text-shadow:0 0 4px #fff}
+.p.conf{width:7px;height:11px;border-radius:2px}
+.p.box{width:24px;height:24px;image-rendering:pixelated}
+.pop{animation:pop .6s cubic-bezier(.3,1.8,.5,1)}
+@keyframes pop{0%{transform:scale(.2)}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="en">AKARI · PIXEL STUDIO</div>
-    <h1>灯芯像素工房</h1>
-    <p>打扮你的灯芯，貼到聊天室，它就會在舞台上走來走去！</p>
-  </header>
-
-  <div class="card">
-    <canvas id="grid" width="512" height="512"></canvas>
-    <p class="hint">外框和頭上的天線是灯芯的形狀，不能改；裡面和頭頂的空間都可以自由畫。</p>
-  </div>
-
-  <div class="card">
-    <h2>① 自由塗鴉</h2>
-    <div class="palette" id="pal"></div>
-    <div class="row tools">
-      <button class="chip on" data-tool="pen">✏️ 畫筆</button>
-      <button class="chip" data-tool="fill">🪣 填滿</button>
-      <button class="chip" id="mirror">🪞 左右對稱</button>
-      <button class="chip" id="undo">↩ 復原</button>
-      <button class="chip" id="reset">🔄 重新開始</button>
-    </div>
-  </div>
-
-  <div class="card"><h2>② 表情</h2><div class="row" id="faces"></div></div>
-  <div class="card"><h2>③ 配件 <small>點一下戴上，再點一下拿掉</small></h2><div class="row" id="stamps"></div></div>
-  <div class="card"><h2>✦ 預覽</h2>
-    <div class="stage" id="stage"><div class="ground"></div><canvas id="walker" width="16" height="16"></canvas></div></div>
-
-  <div class="card">
-    <h2>✦ 召喚咒語</h2>
-    <div class="code"><input id="out" readonly><button class="main" id="copy">複製</button></div>
-    <p class="hint">把咒語貼到直播聊天室送出，你的灯芯就會登場。<br>只要貼一次，之後在灯理的直播留言都會用這隻灯芯。<br>想修改：把舊咒語貼到下面，按「讀取」再畫。</p>
-    <div class="code"><input id="inp" placeholder="貼上咒語（灯px:…）"><button class="chip" id="load">讀取</button></div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
-
+<div id="stage"></div>
+<script src="items.js"></script>
+<script src="http://localhost:11180/templates/preset/__origin/js/onesdk.js"></script>
+<script>if(!window.OneSDK)document.write('<script src="../preset/__origin/js/onesdk.js"><\/script>');</script>
 <script>
+/* ===== 連線狀態小標籤：載入時顯示 6 秒，網址加 ?debug=1 會一直顯示 ===== */
+function showStatus(label){
+  const Q=new URLSearchParams(location.search);
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;left:16px;bottom:16px;z-index:99;padding:8px 14px;border-radius:999px;'+
+    'font:700 16px "Noto Sans TC","Microsoft JhengHei",sans-serif;color:#fff;background:rgba(40,30,60,.85);transition:opacity .8s;pointer-events:none';
+  document.body.appendChild(el);
+  const set=(t,ok)=>{el.textContent=label+'：'+t;el.style.background=ok?'rgba(46,140,96,.9)':'rgba(190,60,70,.92)';};
+  if(!window.OneSDK){set('找不到 OneSDK，請改用わんコメ模板列表裡複製的網址',false);return;}
+  el.textContent=label+'：連線中…';
+  let n=0;const iv=setInterval(()=>{n++;
+    if(window.OneSDK.connected){set('已連上わんコメ ✦ 有人留言就會出現',true);clearInterval(iv);
+      if(Q.get('debug')!=='1')setTimeout(()=>el.style.opacity=0,6000);}
+    else if(n===8)set('連不上わんコメ，請確認わんコメ有開著',false);
+  },1000);
+}
+/* ===== 連線狀態結束 ===== */
+
+</script>
+<script>
+(() => {
+const Q = new URLSearchParams(location.search);
+const CFG = {
+  size:   +Q.get('size')   || 4,
+  y:      +Q.get('y')      || 0.96,
+  max:    +Q.get('max')    || 40,
+  idle:   +Q.get('idle')   || 15,
+  bubble: +Q.get('bubble') || 5,
+  owner:  Q.get('owner') !== '0',
+};
 /* ===== 灯芯像素：共用定義（像素工房、像素遊行、片尾名單三邊一致，改這裡要三邊一起改） ===== */
 const N = 16;
 const PAL = [null,'#2a1c2e','#ffffff','#fff1c7','#ffd95e','#ffa63d','#e8692e','#e0574a',
@@ -146,122 +166,273 @@ function paintPx(cv, px){
 }
 /* ===== 共用定義結束 ===== */
 
+const store = {
+  get(id){try{return JSON.parse(localStorage.getItem('slp:px:'+id));}catch(e){return null;}},
+  set(id,px){try{localStorage.setItem('slp:px:'+id,JSON.stringify(px));}catch(e){}},
+};
 
-/* ===== 表情與配件 ===== */
-const P = (pts, c) => pts.map(([x,y]) => [x,y,c]);
-const FACES = [
-  {name:'開心', pts:[...P([[4,8],[5,9],[4,10],[11,8],[10,9],[11,10]],1),
-     ...P([[6,10],[7,10],[8,10],[9,10],[5,11],[6,11],[7,11],[8,11],[9,11],[10,11],[6,12],[7,12],[8,12],[9,12]],7)]},
-  {name:'微笑', pts:[...P([[5,8],[5,9],[10,8],[10,9],[6,11],[9,11],[7,12],[8,12]],1)]},
-  {name:'眨眼', pts:[...P([[4,8],[5,9],[4,10],[10,8],[10,9]],1),...P([[7,11],[8,11],[7,12],[8,12]],7)]},
-  {name:'愛心眼', pts:[...P([[4,8],[6,8],[4,9],[5,9],[6,9],[5,10],[9,8],[11,8],[9,9],[10,9],[11,9],[10,10]],9),...P([[7,11],[8,11],[7,12],[8,12]],7)]},
-  {name:'驚訝', pts:[...P([[4,8],[5,8],[4,9],[5,9],[10,8],[11,8],[10,9],[11,9]],1),...P([[7,11],[8,11],[7,12],[8,12]],7)]},
-  {name:'睏睏', pts:[...P([[4,9],[5,9],[10,9],[11,9],[7,12],[8,12]],1)]},
-];
-const STAMPS = [
-  {name:'皇冠', pts:[...P([[4,2],[6,2],[8,2],[4,3],[5,3],[7,3],[8,3],[4,4],[5,4],[6,4],[7,4],[8,4]],4),[6,3,9]]},
-  {name:'蝴蝶結', pts:[...P([[1,3],[2,3],[4,3],[5,3],[1,4],[2,4],[4,4],[5,4],[1,5],[2,5],[4,5],[5,5]],9),[3,4,8]]},
-  {name:'點燈', pts:[[11,0,4],[12,0,4],[11,1,5],[12,1,5]]},
-  {name:'小花', pts:[[13,5,4],...P([[13,4],[13,6],[12,5],[14,5]],8)]},
-  {name:'眼鏡', pts:P([[3,8],[4,8],[5,8],[6,8],[3,9],[6,9],[3,10],[4,10],[5,10],[6,10],
-     [9,8],[10,8],[11,8],[12,8],[9,9],[12,9],[9,10],[10,10],[11,10],[12,10],[7,8],[8,8]],1)},
-  {name:'腮紅', pts:P([[3,11],[4,11],[11,11],[12,11]],8)},
-];
+const stage = document.getElementById('stage');
+const walkers = new Map();
+const seen = new Set();
+const scUsers = new Set();   // 這場直播丟過 SC 的人（6 小時沒有活動就清空）
+const SZ = N * CFG.size;
+const names = new Map();     // 名字 → userId（給管理指令用）
+let groundY = 0;
 
-/* ===== 編輯器 ===== */
-const grid=document.getElementById('grid'),g=grid.getContext('2d');
-let px=basePx(), color=9, tool='pen', mirror=false, history=[];
-const worn=new Set();
-const FREE=new URLSearchParams(location.search).get('free')==='1';   // 自由模式：網址加 ?free=1
-const DRAFT=FREE?'pxDraftFree':'pxDraft3';
-const LK=i=>!FREE&&LOCK[i];
-let ghost=FREE;
-try{const s=localStorage.getItem(DRAFT);const d=s&&JSON.parse(s);if(d&&d.px&&d.px.length===N*N){px=FREE?d.px:sanitize(d.px);}}catch(e){}
-
-function snapshot(){history.push({px:px.slice(),w:[...worn]});if(history.length>60)history.shift();}
-function put([x,y,c]){const i=y*N+x;if(x<0||y<0||x>=N||y>=N||LK(i))return;px[i]=c;}
-function erase(i){px[i]=!FREE&&SHAPE[i]?basePx()[i]:0;}
-// 戴上配件前先記住原本的像素，拿掉時還原
-const under={};
-function toggleStamp(s,btn){
-  snapshot();
-  if(worn.has(s.name)){(under[s.name]||[]).forEach(([i,c])=>px[i]=c);worn.delete(s.name);}
-  else{under[s.name]=s.pts.map(([x,y])=>[y*N+x,px[y*N+x]]);s.pts.forEach(put);worn.add(s.name);}
-  btn.classList.toggle('on',worn.has(s.name));draw();
+function stripHtml(html){
+  const d=document.createElement('div');d.innerHTML=html||'';
+  const out=document.createElement('span');
+  d.childNodes.forEach(function walk(n){
+    if(n.nodeType===3) out.appendChild(document.createTextNode(n.textContent));
+    else if(n.nodeName==='IMG'){const i=document.createElement('img');i.src=n.getAttribute('src');out.appendChild(i);}
+    else n.childNodes.forEach(walk);
+  });
+  return out;
 }
-function setFace(f){snapshot();FACE.forEach((on,i)=>{if(on)px[i]=3;});f.pts.forEach(put);
-  ['眼鏡','腮紅'].forEach(n=>{if(worn.has(n)){const s=STAMPS.find(x=>x.name===n);under[n]=s.pts.map(([x,y])=>[y*N+x,px[y*N+x]]);s.pts.forEach(put);}});draw();}
-function chipCanvas(p){const c=document.createElement('canvas');paintPx(c,p);return c;}
-const fbox=document.getElementById('faces');
-FACES.forEach(f=>{const b=document.createElement('button');b.className='chip';
-  const p=basePx();FACE.forEach((on,i)=>{if(on)p[i]=3;});f.pts.forEach(([x,y,c])=>p[y*N+x]=c);
-  b.appendChild(chipCanvas(p));b.append(f.name);b.onclick=()=>setFace(f);fbox.appendChild(b);});
-const sbox=document.getElementById('stamps');
-STAMPS.forEach(s=>{const b=document.createElement('button');b.className='chip';
-  const p=basePx();s.pts.forEach(([x,y,c])=>{if(!LOCK[y*N+x])p[y*N+x]=c;});
-  b.appendChild(chipCanvas(p));b.append(s.name);b.onclick=()=>toggleStamp(s,b);sbox.appendChild(b);});
-
-const pal=document.getElementById('pal');
-PAL.forEach((c,i)=>{const d=document.createElement('div');d.className='sw'+(i===0?' erase':'')+(i===color?' on':'');
-  if(c)d.style.background=c;d.title=i===0?'橡皮擦（身體裡會還原成原本的顏色）':c;
-  d.onclick=()=>{color=i;[...pal.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');};pal.appendChild(d);});
-
-const walker=document.getElementById('walker');
-function draw(){
-  const s=grid.width/N;g.clearRect(0,0,grid.width,grid.height);
-  for(let i=0;i<N*N;i++){const c=PAL[px[i]];if(c){g.fillStyle=c;g.fillRect((i%N)*s,((i/N)|0)*s,s,s);}}
-  g.strokeStyle='rgba(120,90,70,.10)';g.lineWidth=1;
-  for(let i=1;i<N;i++){g.beginPath();g.moveTo(i*s+.5,0);g.lineTo(i*s+.5,grid.height);g.stroke();g.beginPath();g.moveTo(0,i*s+.5);g.lineTo(grid.width,i*s+.5);g.stroke();}
-  // 鎖定的外框畫上斜線
-  g.strokeStyle='rgba(255,255,255,.45)';
-  if(FREE&&ghost){g.globalAlpha=.18;const b=basePx();for(let i=0;i<N*N;i++){const c=PAL[b[i]];if(c&&!px[i]){g.fillStyle=c;g.fillRect((i%N)*s,((i/N)|0)*s,s,s);}}g.globalAlpha=1;}
-  for(let i=0;i<N*N;i++)if(LK(i)){const x=(i%N)*s,y=((i/N)|0)*s;g.beginPath();g.moveTo(x+s*.25,y+s*.75);g.lineTo(x+s*.75,y+s*.25);g.stroke();}
-  if(mirror){g.strokeStyle='rgba(236,143,92,.8)';g.beginPath();g.moveTo(grid.width/2,0);g.lineTo(grid.width/2,grid.height);g.stroke();}
-  paintPx(walker,px);
-  const code=encode(px);out.value=code;
-  try{localStorage.setItem(DRAFT,JSON.stringify({px}));}catch(e){}
+function setBadges(w,d){
+  const box=w.el.querySelector('.badges');box.innerHTML='';
+  (d.badges||[]).forEach(b=>{
+    if(!b||!b.url||b.type==='svg'||!/^(https?:|data:image)/.test(b.url))return;
+    const i=document.createElement('img');i.src=b.url;i.alt=b.label||'';box.appendChild(i);
+  });
 }
-function paint(x,y){if(color===0){const i=y*N+x;if(!LK(i))erase(i);if(mirror){const j=y*N+(N-1-x);if(!LK(j))erase(j);}return;}
-  put([x,y,color]);if(mirror)put([N-1-x,y,color]);}
-function fill(x,y){const t=px[y*N+x];if(LK(y*N+x))return;const c=color===0?null:color;if(t===c)return;const st=[[x,y]],seen=new Set();
-  while(st.length){const [a,b]=st.pop();const i=b*N+a;if(a<0||b<0||a>=N||b>=N||seen.has(i)||LK(i)||px[i]!==t)continue;seen.add(i);
-    if(c===null)erase(i);else px[i]=c;st.push([a+1,b],[a-1,b],[a,b+1],[a,b-1]);}}
-let down=false;
-function cell(e){const r=grid.getBoundingClientRect();return[Math.floor((e.clientX-r.left)/r.width*N),Math.floor((e.clientY-r.top)/r.height*N)];}
-grid.addEventListener('pointerdown',e=>{down=true;grid.setPointerCapture(e.pointerId);snapshot();const [x,y]=cell(e);
-  if(LK(y*N+x)&&tool==='pen')toast('外框和天線是灯芯的形狀，不能改喔');
-  if(tool==='fill'){fill(x,y);if(mirror)fill(N-1-x,y);}else paint(x,y);draw();});
-grid.addEventListener('pointermove',e=>{if(!down||tool!=='pen')return;const [x,y]=cell(e);paint(x,y);draw();});
-addEventListener('pointerup',()=>down=false);
-document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('on',x===b));});
-const mb=document.getElementById('mirror');mb.onclick=()=>{mirror=!mirror;mb.classList.toggle('on',mirror);draw();};
-document.getElementById('undo').onclick=()=>{const h=history.pop();if(!h)return;px=h.px;worn.clear();h.w.forEach(n=>worn.add(n));
-  [...sbox.children].forEach((b,i)=>b.classList.toggle('on',worn.has(STAMPS[i].name)));draw();};
-document.getElementById('reset').onclick=()=>{snapshot();px=basePx();worn.clear();[...sbox.children].forEach(b=>b.classList.remove('on'));draw();};
+function makeWalker(d){
+  const el=document.createElement('div');el.className='w';
+  el.innerHTML='<div class="bubble"></div><div class="body pop"><div class="crown">👑</div>'+
+    '<canvas class="me" width="16" height="16"></canvas><div class="shadow"></div><div class="name"><b class="badges"></b><span></span></div></div>';
+  const cv=el.querySelector('canvas');cv.style.width=cv.style.height=SZ+'px';
+  el.querySelector('.name span').textContent=d.displayName||d.name||'';
+  stage.appendChild(el);
+  const w={id:d.userId,el,cv,x:Math.random()*(innerWidth-SZ),y:innerHeight*CFG.y-SZ-24,dir:Math.random()<.5?-1:1,
+    speed:24+Math.random()*30,pause:0,phase:Math.random()*6,last:Date.now(),bubbleT:null,jump:0};
+  paintPx(cv,compose(d.userId));
+  if(scUsers.has(d.userId))el.classList.add('sc');
+  walkers.set(d.userId,w);
+  if(walkers.size>CFG.max){let old=null;for(const v of walkers.values())if(v!==w&&(!old||v.last<old.last))old=v;if(old)leave(old);}
+  return w;
+}
+function resetUser(name){
+  const id=names.get(name)||names.get(name.replace(/^@/,''));if(!id)return;
+  try{localStorage.removeItem('slp:px:'+id);}catch(e){}
+  try{localStorage.removeItem('slp:free:'+id);}catch(e){}
+  repaint(id);
+}
+function leave(w){walkers.delete(w.id);w.el.style.opacity=0;setTimeout(()=>w.el.remove(),900);}
+function say(w,node,tag,ms){
+  const b=w.el.querySelector('.bubble');b.innerHTML='';
+  if(tag){const t=document.createElement('span');t.className='tag '+tag.cls;t.textContent=tag.text;b.appendChild(t);}
+  if(node)b.appendChild(node);
+  b.style.marginBottom=tag&&node?'20px':'';b.classList.toggle('tagonly',!!tag&&!node);
+  b.classList.add('show');
+  clearTimeout(w.bubbleT);w.bubbleT=setTimeout(()=>b.classList.remove('show'),ms||CFG.bubble*1000);
+}
+function txt(s){const t=document.createElement('span');t.textContent=s;return t;}
 
-const out=document.getElementById('out'),inp=document.getElementById('inp');
-document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(out.value);}catch(e){out.select();document.execCommand('copy');}toast('已複製！貼到聊天室吧 ✦');};
-document.getElementById('load').onclick=()=>{const d=FREE?decodeRaw(inp.value):decode(inp.value);if(!d){toast('咒語好像不完整喔');return;}
-  snapshot();px=d;worn.clear();
-  [...sbox.children].forEach(b=>b.classList.remove('on'));draw();toast('讀取成功！');};
+/* ===== 粒子特效 ===== */
+const parts=[];
+function addPart(el,x,y,vx,vy,g,life,spin,bounce){el.classList.add('p');stage.appendChild(el);
+  parts.push({el,x,y,vx,vy,g,life,max:life,rot:Math.random()*360,spin:spin||0,bounce:!!bounce});}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const center=w=>[w.x+SZ/2,w.y+SZ/2];
+function fxStars(w,n,colors){const [cx,cy]=center(w);
+  for(let i=0;i<n;i++){const e=document.createElement('div');e.className='star';e.style.background=colors[i%colors.length];
+    const a=rnd(0,Math.PI*2),v=rnd(120,240);addPart(e,cx,cy,Math.cos(a)*v,Math.sin(a)*v-120,380,rnd(.8,1.2),rnd(-400,400));}}
+function fxHearts(w,n){const [cx,cy]=center(w);
+  for(let i=0;i<n;i++){const e=document.createElement('div');e.className='heart';e.textContent='♥';
+    e.style.color=['#ff6fa8','#ff9cc4','#f06292'][i%3];addPart(e,cx+rnd(-SZ/2,SZ/2),cy,rnd(-40,40),rnd(-150,-80),-10,rnd(1.6,2.4),rnd(-60,60));}}
+function fxConfetti(w,n){const [cx,cy]=center(w);
+  for(let i=0;i<n;i++){const e=document.createElement('div');e.className='conf';
+    e.style.background=['#ffd95e','#ff6fa8','#8be0ff','#a98bff','#6fe3b5','#ffa63d'][i%6];
+    addPart(e,cx,cy,rnd(-220,220),rnd(-560,-360),620,rnd(2,2.8),rnd(-720,720));}}
+const BOX=(()=>{const c=document.createElement('canvas');c.width=c.height=8;const g=c.getContext('2d');
+  const rows=['.y....y.','..y..y..','pppyyppp','pppyyppp','yyyyyyyy','pppyyppp','pppyyppp','pppyyppp'];
+  const col={p:'#ff7eb0',y:'#ffd95e'};rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(col[ch]){g.fillStyle=col[ch];g.fillRect(x,y,1,1);}}));return c;})();
+function fxGifts(w,n){const [cx,cy]=center(w);
+  for(let i=0;i<Math.min(30,Math.max(4,n*3));i++){const e=document.createElement('canvas');e.className='box';e.width=e.height=8;
+    e.getContext('2d').drawImage(BOX,0,0);addPart(e,cx-12,cy-12,rnd(-280,280),rnd(-480,-300),760,rnd(2.6,3.4),rnd(-300,300),true);}
+  fxConfetti(w,16);}
 
-const stage=document.getElementById('stage');
-for(let i=0;i<14;i++){const s=document.createElement('div');s.className='spark';s.textContent='✦';s.style.left=Math.random()*95+'%';s.style.top=Math.random()*60+'%';stage.appendChild(s);}
-let wx=20,dir=1,t0=performance.now();
-function loop(t){const dt=Math.min(.05,(t-t0)/1000);t0=t;const W=stage.clientWidth-72;wx+=dir*45*dt;if(wx>W){wx=W;dir=-1;}if(wx<0){wx=0;dir=1;}
-  walker.style.left=wx+'px';walker.style.transform=`translateY(${-Math.abs(Math.sin(t/140))*8}px) scaleX(${dir})`;requestAnimationFrame(loop);}
+/* ===== 限定配件／特殊造型 ===== */
+const ITEMS=(window.AKARI_ITEMS||[]).map(it=>Object.assign({},it,{name:String(it.name||'').trim(),px:decodeRaw(it.code)})).filter(it=>it.name&&it.px);
+const itemBy=n=>ITEMS.find(it=>it.name===String(n).trim());
+const inv={get(id){try{return JSON.parse(localStorage.getItem('slp:inv:'+id))||{own:[],wear:[]};}catch(e){return {own:[],wear:[]};}},
+  set(id,v){try{localStorage.setItem('slp:inv:'+id,JSON.stringify(v));}catch(e){}}};
+const isFree=id=>{try{return localStorage.getItem('slp:free:'+id)==='1';}catch(e){return false;}};
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function open_(it){const t=today();return (!it.from||t>=it.from)&&(!it.to||t<=it.to);}
+function compose(id){
+  const saved=store.get(id);
+  let px=saved&&saved.length===N*N?(isFree(id)?saved.slice():sanitize(saved)):basePx();
+  const worn=inv.get(id).wear.map(itemBy).filter(Boolean);
+  worn.filter(it=>it.type==='造型').forEach(it=>{px=it.px.slice();});
+  worn.filter(it=>it.type!=='造型').forEach(it=>it.px.forEach((c,i)=>{if(c)px[i]=c;}));
+  return px;
+}
+function repaint(id){const w=walkers.get(id);if(w)paintPx(w.cv,compose(id));}
+function wearIt(v,it){
+  if(it.type==='造型')v.wear=v.wear.filter(n=>{const x=itemBy(n);return !x||x.type!=='造型';});
+  if(!v.wear.includes(it.name))v.wear.push(it.name);
+}
+function grant(id,it,w){
+  const v=inv.get(id);if(!v.own.includes(it.name))v.own.push(it.name);wearIt(v,it);inv.set(id,v);repaint(id);
+  if(w){w.jump=1;w.jh=1.2;fxStars(w,20,['#ffd95e','#ff9cc4','#fff']);say(w,txt(`✦ 獲得「${it.name}」！`),null,4500);}
+}
+function itemCommand(d,plain,w){
+  let m;
+  if((m=/^\s*灯get\s*(\S+)\s*$/.exec(plain))){const it=itemBy(m[1]);if(!it)return true;
+    if(open_(it)||inv.get(d.userId).own.includes(it.name))grant(d.userId,it,w);
+    else say(w,txt(`「${it.name}」現在不能兌換喔`),null,3500);return true;}
+  if((m=/^\s*灯wear\s*(\S+)\s*$/.exec(plain))){const v=inv.get(d.userId);
+    if(/^(無|无|none|全部)$/i.test(m[1])){v.wear=[];inv.set(d.userId,v);repaint(d.userId);return true;}
+    const it=itemBy(m[1]);if(!it||!v.own.includes(it.name)){say(w,txt('還沒有這個配件喔'),null,3000);return true;}
+    if(v.wear.includes(it.name))v.wear=v.wear.filter(n=>n!==it.name);else wearIt(v,it);
+    inv.set(d.userId,v);repaint(d.userId);w.jump=1;w.jh=.6;return true;}
+  return false;
+}
+function adminCommand(d,plain){
+  if(!(d.isOwner||d.isModerator))return false;
+  let m;
+  if((m=/^\s*灯reset\s+@?(.+?)\s*$/.exec(plain))){resetUser(m[1]);return true;}
+  if((m=/^\s*灯give\s+@?(.+?)\s+(\S+)\s*$/.exec(plain))){const id=names.get(m[1]),it=itemBy(m[2]);if(id&&it)grant(id,it,walkers.get(id));return true;}
+  if((m=/^\s*灯take\s+@?(.+?)\s+(\S+)\s*$/.exec(plain))){const id=names.get(m[1]),it=itemBy(m[2]);
+    if(id&&it){const v=inv.get(id);v.own=v.own.filter(n=>n!==it.name);v.wear=v.wear.filter(n=>n!==it.name);inv.set(id,v);repaint(id);}return true;}
+  return false;
+}
+
+/* ===== 留言處理 ===== */
+function isFresh(d){const t=Date.parse(d.timestamp)||+d.timestamp||Date.now();return Date.now()-t<60*1000;}
+function onComment(c){
+  if(!c||!c.data||c.service==='system')return;
+  const d=c.data;
+  if(seen.has(d.id))return; seen.add(d.id);
+  const plain=(d.comment||'').replace(/<[^>]+>/g,'');
+  names.set(d.displayName||d.name,d.userId);
+  if(adminCommand(d,plain))return;
+  if(d.isOwner && !CFG.owner)return;
+  const fresh=isFresh(d);
+  const w=walkers.get(d.userId)||makeWalker(d);
+  w.last=Date.now(); w.pause=0; w.badges=d.badges||[];
+  setBadges(w,d);
+  if(itemCommand(d,plain,w))return;
+  const raw=decodeRaw(d.comment);
+  if(raw){
+    // 只有頻道主可以用不受外框限制的造型
+    if(d.isOwner){store.set(d.userId,raw);try{localStorage.setItem('slp:free:'+d.userId,'1');}catch(e){}}
+    else{store.set(d.userId,sanitize(raw));try{localStorage.removeItem('slp:free:'+d.userId);}catch(e){}}
+    repaint(d.userId);
+    if(fresh){w.jump=1;w.jh=1;fxStars(w,14,['#ffd95e','#fff']);say(w,txt('✦ 變身完成！'),null,3500);}
+    return;
+  }
+  if(!fresh)return;
+  const body=stripHtml(d.comment), has=body.textContent.trim()||body.querySelector('img');
+  const gt=d.giftType;
+  if(gt==='sponsorgift'){
+    const n=d.giftCount||1;w.jump=1;w.jh=1.4;fxGifts(w,n);
+    say(w,null,{cls:'gift',text:`🎁 送出 ${n} 份會員禮物！`},7000);return;
+  }
+  if(gt==='giftreceived'){w.jump=1;w.jh=.8;fxHearts(w,6);say(w,null,{cls:'member',text:'♡ 收到會員禮物'},4000);return;}
+  if(gt==='subscribe'){
+    w.jump=1;w.jh=1.2;fxHearts(w,16);say(w,has?body:null,{cls:'member',text:'✦ WELCOME 新會員'},7000);return;
+  }
+  if(gt==='milestonechat'){
+    w.jump=1;w.jh=1.4;fxConfetti(w,46);
+    const m=d.membership&&(d.membership.primary||d.membership.sub);
+    say(w,has?body:null,{cls:'mile',text:'🎉 '+(m||'會員里程碑')},8000);return;
+  }
+  if(d.hasGift&&(d.paidText||d.price)){
+    scUsers.add(d.userId);w.el.classList.add('sc');w.jump=1;w.jh=1.2;fxStars(w,22,['#ffd95e','#ffb03b','#fff']);
+    if(gt==='supersticker'){const im=body.querySelector('img');if(im){im.className='sticker';say(w,im,{cls:'sc',text:d.paidText||''},8000);return;}}
+    say(w,has?body:null,{cls:'sc',text:d.paidText||('$'+d.price)},8000);return;
+  }
+  if(gt==='jewel'){w.jump=1;w.jh=.8;fxStars(w,10,['#8be0ff','#fff']);say(w,has?body:null,{cls:'gift',text:'💎 寶石禮物'},5000);return;}
+  if(has) say(w,body);
+}
+
+/* ===== 走路與特效 ===== */
+let t0=performance.now();
+function loop(t){
+  const dt=Math.min(.05,(t-t0)/1000);t0=t;
+  const W=innerWidth,baseY=innerHeight*CFG.y-SZ-24;groundY=baseY+SZ;
+  const now=Date.now();
+  for(const w of walkers.values()){
+    if(now-w.last>CFG.idle*60000){leave(w);continue;}
+    if(w.pause>0){w.pause-=dt;} else {
+      w.x+=w.dir*w.speed*dt;
+      if(w.x<0){w.x=0;w.dir=1;} if(w.x>W-SZ){w.x=W-SZ;w.dir=-1;}
+      if(Math.random()<dt*.25){w.pause=1+Math.random()*3;}
+      if(Math.random()<dt*.12){w.dir*=-1;}
+    }
+    w.phase+=dt*(w.pause>0?2:9);
+    let hop=w.pause>0?Math.abs(Math.sin(w.phase))*1.5:Math.abs(Math.sin(w.phase))*SZ*.09;
+    if(w.jump>0){w.jump-=dt*1.6;hop+=Math.sin(Math.max(0,w.jump)*Math.PI)*SZ*1.1*(w.jh||1);}
+    w.y=baseY-hop;
+    w.el.style.transform=`translate(${w.x}px,${w.y}px)`;
+    w.cv.style.transform=`scaleX(${-w.dir})`;
+  }
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];
+    p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.spin*dt;p.life-=dt;
+    if(p.bounce&&p.y>groundY-20&&p.vy>0){p.y=groundY-20;p.vy*=-.35;p.vx*=.6;p.spin*=.5;}
+    if(p.life<=0){p.el.remove();parts.splice(i,1);continue;}
+    p.el.style.opacity=Math.min(1,p.life/.6);
+    p.el.style.transform=`translate(${p.x}px,${p.y}px) rotate(${p.rot}deg)`;
+  }
+  requestAnimationFrame(loop);
+}
 requestAnimationFrame(loop);
-let tt;function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),1800);}
-if(FREE){
-  document.querySelector('header p').textContent='自由模式：不限外框，可以畫你自己的造型或限定配件';
-  document.querySelector('.hint').textContent='淡淡的灯芯只是參考線，不會出現在咒語裡。畫配件時先按「清空成透明」，只畫配件的部分。';
-  const tools=document.querySelector('.tools');
-  const c=document.createElement('button');c.className='chip';c.textContent='⬜ 清空成透明';
-  c.onclick=()=>{snapshot();px=new Array(N*N).fill(0);draw();};tools.appendChild(c);
-  const gb=document.createElement('button');gb.className='chip on';gb.textContent='👻 參考灯芯';
-  gb.onclick=()=>{ghost=!ghost;gb.classList.toggle('on',ghost);draw();};tools.appendChild(gb);
+
+/* ===== 記住畫面上的灯芯：切換場景、來源重新載入後會回到原位 ===== */
+const SKEY='slp:parade:state';
+function saveState(){
+  try{localStorage.setItem(SKEY,JSON.stringify({t:Date.now(),sc:[...scUsers],
+    w:[...walkers.values()].map(w=>({id:w.id,n:w.el.querySelector('.name span').textContent,b:w.badges||[],last:w.last,x:Math.round(w.x),dir:w.dir}))}));}catch(e){}
 }
-draw();
+function restoreState(){
+  let st=null;try{st=JSON.parse(localStorage.getItem(SKEY));}catch(e){}
+  if(!st||Date.now()-st.t>6*3600e3)return;
+  (st.sc||[]).forEach(id=>scUsers.add(id));
+  (st.w||[]).forEach(o=>{
+    if(Date.now()-o.last>CFG.idle*60000||walkers.has(o.id))return;
+    const w=makeWalker({userId:o.id,name:o.n,displayName:o.n,badges:o.b});
+    w.last=o.last;w.badges=o.b;setBadges(w,{badges:o.b});
+    if(o.x>=0&&o.x<=innerWidth-SZ)w.x=o.x;if(o.dir)w.dir=o.dir;
+    names.set(o.n,o.id);
+  });
+}
+restoreState();
+setInterval(saveState,2000);
+addEventListener('beforeunload',saveState);
+
+/* ===== 接上わんコメ ===== */
+function handle(arg){const list=Array.isArray(arg)?arg:(arg&&arg.comments)||[];list.forEach(onComment);}
+showStatus('灯芯遊行');
+const sdk=window.OneSDK;
+if(sdk){
+  Promise.resolve(sdk.ready&&sdk.ready()).then(()=>{
+    const op={mode:'diff'};
+    if(sdk.usePermission&&sdk.PERM) op.permissions=sdk.usePermission([sdk.PERM.COMMENT]);
+    sdk.setup(op);
+    sdk.subscribe({action:'comments',callback:handle});
+    return sdk.connect();
+  }).catch(e=>console.error(e));
+}
+
+/* ===== 示範模式 ===== */
+if(Q.get('demo')==='1'){
+  const BADGE='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#ffa63d" stroke="#e8692e" stroke-width="2"/><path d="M8 4l1.2 2.6 2.8.3-2.1 1.9.6 2.8L8 10.2 5.5 11.6l.6-2.8L4 6.9l2.8-.3z" fill="#fff"/></svg>');
+  const NAMES=['小星星','momo','夜空観測員','ぽてと','Lumi','流れ星','阿光','ねこ'],SAY=['大好き！','灯灯可愛','✦✦✦','こんばんは〜','好聽！','安可！','wwww','初見です'];
+  const SPECIAL=[
+    {hasGift:true,giftType:'superchat',paidText:'NT$300.00',price:300,comment:'灯灯辛苦了！'},
+    {hasGift:true,giftType:'subscribe',comment:'',membership:{primary:'新會員'}},
+    {hasGift:true,giftType:'sponsorgift',giftCount:5,comment:''},
+    {hasGift:true,giftType:'milestonechat',comment:'一年了！',membership:{primary:'會員 12 個月'}},
+  ];
+  let k=0;setInterval(()=>{const i=k%NAMES.length;const sp=k%5===4?SPECIAL[(k/5|0)%SPECIAL.length]:{};
+    onComment({service:'youtube',data:Object.assign({id:'demo'+k,userId:'demo'+i,name:NAMES[i],
+      comment:SAY[(k*3)%SAY.length],timestamp:new Date().toISOString(),hasGift:false,isOwner:false,
+      badges:i%3===0?[{url:BADGE,label:'メンバー'}]:[]},sp)});k++;},1400);
+}
+window.__parade={onComment,walkers,compose,ITEMS}; // 測試用
+})();
 </script>
 </body>
 </html>
