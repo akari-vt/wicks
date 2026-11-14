@@ -207,6 +207,16 @@ function toggleStamp(s,btn){
 }
 function setFace(f){snapshot();FACE.forEach((on,i)=>{if(on)px[i]=3;});f.pts.forEach(put);
   ['眼鏡','腮紅'].forEach(n=>{if(worn.has(n)){const s=STAMPS.find(x=>x.name===n);under[n]=s.pts.map(([x,y])=>[y*N+x,px[y*N+x]]);s.pts.forEach(put);}});draw();}
+// 分頁圖示：眨眼的灯芯放在奶油色圓角方塊上（直接畫出來，不用另外上傳圖片）
+(function(){
+  const p=basePx();FACE.forEach((on,i)=>{if(on)p[i]=3;});
+  FACES.find(f=>f.name==='眨眼').pts.forEach(([x,y,c])=>p[y*N+x]=c);
+  const sp=document.createElement('canvas');paintPx(sp,p);
+  const icon=size=>{const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+    g.fillStyle='#fff6e3';g.beginPath();if(g.roundRect)g.roundRect(0,0,size,size,size*.22);else g.rect(0,0,size,size);g.fill();
+    const m=Math.round(size*.1);g.drawImage(sp,m,Math.round(m*.4),size-2*m,size-2*m);return c.toDataURL('image/png');};
+  [['icon',64],['apple-touch-icon',180]].forEach(([rel,size])=>{const l=document.createElement('link');l.rel=rel;l.href=icon(size);document.head.appendChild(l);});
+})();
 function chipCanvas(p){const c=document.createElement('canvas');paintPx(c,p);return c;}
 const fbox=document.getElementById('faces');
 FACES.forEach(f=>{const b=document.createElement('button');b.className='chip';
