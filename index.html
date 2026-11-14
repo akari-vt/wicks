@@ -269,7 +269,7 @@ const stage=document.getElementById('stage');
 for(let i=0;i<14;i++){const s=document.createElement('div');s.className='spark';s.textContent='✦';s.style.left=Math.random()*95+'%';s.style.top=Math.random()*60+'%';stage.appendChild(s);}
 let wx=20,dir=1,t0=performance.now();
 function loop(t){const dt=Math.min(.05,(t-t0)/1000);t0=t;const W=stage.clientWidth-72;wx+=dir*45*dt;if(wx>W){wx=W;dir=-1;}if(wx<0){wx=0;dir=1;}
-  walker.style.left=wx+'px';walker.style.transform=`translateY(${-Math.abs(Math.sin(t/140))*8}px) scaleX(${dir})`;requestAnimationFrame(loop);}
+  walker.style.left=wx+'px';walker.style.transform=`translateY(${-Math.abs(Math.sin(t/140))*8}px) scaleX(${-dir})`;requestAnimationFrame(loop);}
 requestAnimationFrame(loop);
 let tt;function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),1800);}
 if(FREE){
@@ -364,6 +364,7 @@ const SECS=[
   {c:'灯wear ',l:'戴上／拿下配件',n:'後面接配件名稱；「灯wear 無」全部拿下'}]},
 ];
 SECS.push({id:'admin',t:'👑 灯理／管理員專用',warn:'這區只有灯理和管理員打才有效，觀眾打了不會有反應',items:[
+  {c:'灯抽獎',l:'扭蛋機抽獎',n:'只抽還在畫面上的灯芯（15 分鐘沒留言離場的不算）；「灯抽獎 3」一次抽三位；同一場中過的不會再中，「灯抽獎 重置」清空得獎名單'},
   {c:'灯sway',l:'全員一起左右搖',n:'「灯sway 停」恢復'},
   {c:'灯星空',l:'星星全部變流星'},
   {c:'灯vote 選項A 選項B',l:'開始站隊投票',n:'不寫選項就是 1／2'},
