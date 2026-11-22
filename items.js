@@ -36,5 +36,4 @@
 window.AKARI_ITEMS = [
   { name: '聖誕帽',     type: '配件', code: '灯px:BDwsgC3IgCXMJdQgnDw8PDw8PDw8PDwM', from: '2026-12-24', to: '2026-12-25' },
   { name: '小幽靈',     type: '造型', code: '灯px:BDw8ExQjAJcAGwCfABcAgESERIMAFwCARIREgwAXAJ8AFwCCAIHEggCDABcAnwAXAJ8AFwCfABcAnwAXAIMAgwSDAIMAFwQDBAMEAwA8C', from: '2027-10-31', to: '2027-11-1' },
-  { name: '子醬',     type: '造型', code: '灯px:CBwcHBwcHBwcADwkECbI6uQgECLAIEDu5CAQIsAk6ugkDCbA6uwkDCTq7MAsCCDm7MgiwCQEIvDIIsTgJAAi7MgmwObgIAAi6MQo6uQgBDAEIObkIBwEMAQ', from: '2025-11-23', to: '2025-11-23' },
 ];
